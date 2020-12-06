@@ -8,7 +8,7 @@ module.exports = async keystone => {
       _allUsersMeta: { count = 0 },
     },
   } = await keystone.executeGraphQL({
-    context: keystone.createContext({ skipAccessControl: true }),
+    context: keystone.createContext({ skipAccessControl: true }), // Si skipAccessControl es true significa que no va a chequear el access control
     query: `query {
       _allUsersMeta {
         count
@@ -16,11 +16,13 @@ module.exports = async keystone => {
     }`,
   });
 
+  // Si no hay ningun usuario lo crea
   if (count === 0) {
-    const password = randomString();
+    const password = randomString(); // Generar password Random
     const email = 'admin@example.com';
 
-    const { errors } = await keystone.executeGraphQL({
+    // Ejecutar query para crear un usuario
+    const { errors } = await keystone.executeGraphQL({ // Ejecutar query para guardar  el usuario
       context: keystone.createContext({ skipAccessControl: true }),
       query: `mutation initialUser($password: String, $email: String) {
             createUser(data: {name: "Admin", email: $email, isAdmin: true, password: $password}) {
