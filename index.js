@@ -5,6 +5,7 @@ const { GraphQLApp } = require('@keystonejs/app-graphql');
 const { AdminUIApp } = require('@keystonejs/app-admin-ui');
 const initialiseData = require('./initial-data');
 require('dotenv').config() // Loading env variables
+const { loadModels } = require('./models')
 
 // Configuracion de la DB
 // Esta configuracion utiliza el adapter knex
@@ -20,55 +21,9 @@ const keystone = new Keystone({
   cookieSecret: process.env.COOKIE_SECRET // Necesitamos configurar un cookie secret para "firmar" las sesiones, si no lo seteamos se va a generar uno nuevo cada vez que inicializamos el servidor y las sesiones previas ya no podran ser utilizadas
 });
 
-// Access control functions
-const userIsAdmin = ({ authentication: { item: user } }) => Boolean(user && user.isAdmin);
-const userOwnsItem = ({ authentication: { item: user } }) => {
-  if (!user) {
-    return false;
-  }
+loadModels(keystone)
 
-  // Instead of a boolean, you can return a GraphQL query:
-  // https://www.keystonejs.com/api/access-control#graphqlwhere
-  return { id: user.id };
-};
-
-const userIsAdminOrOwner = auth => {
-  const isAdmin = access.userIsAdmin(auth);
-  const isOwner = access.userOwnsItem(auth);
-  return isAdmin ? isAdmin : isOwner;
-};
-
-const access = { userIsAdmin, userOwnsItem, userIsAdminOrOwner };
-
-keystone.createList('User', {
-  fields: {
-    name: { type: Text },
-    email: {
-      type: Text,
-      isUnique: true,
-    },
-    isAdmin: {
-      type: Checkbox,
-      // Field-level access controls
-      // Here, we set more restrictive field access so a non-admin cannot make themselves admin.
-      access: {
-        update: access.userIsAdmin,
-      },
-    },
-    password: {
-      type: Password,
-    },
-  },
-  // List-level access controls
-  access: {
-    read: access.userIsAdminOrOwner,
-    update: access.userIsAdminOrOwner,
-    create: access.userIsAdmin,
-    delete: access.userIsAdmin,
-    auth: true,
-  },
-});
-
+// Configuracion de la autenticacion por password
 const authStrategy = keystone.createAuthStrategy({
   type: PasswordAuthStrategy,
   list: 'User',
