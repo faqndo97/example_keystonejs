@@ -12,6 +12,14 @@ const Post = (keystone) => {
         isMultiline: true
       }
     },
+    hooks: {
+      afterChange: async ({ operation, updatedItem }) => {
+        if (operation === 'create') {
+          // Here we should send an email for example
+          console.log(updatedItem)
+        }
+      }
+    }
   })
 }
 
